@@ -34,12 +34,50 @@ const AuthForm: React.FC<AuthFormProps> = ({
   const [errors,setErrors] = useState<Record<string,string>>({})
   const [message,setMessage] = useState<string>("")
 
+  const handleChange=(e:React.ChangeEvent<HTMLInputElement>)=>{
+    const {name,value} = e.target
+    setFormValues((prev)=>({...prev,[name]:value}))
+    setErrors((prev)=>({...prev,[name]:""}))
+  }
+
+  const handleSubmit =async(e:React.FormEvent)=>{
+    e.preventDefault()
+    const newErrors: Record<string,string>={}
+
+    fields.forEach((f)=>{
+      if(!formValues[f.name])  newErrors[f.name]=`field ${f.label} is required`
+    })
+    setErrors(newErrors)
+    if(Object.keys(newErrors).length>0) return
+    setLoading(true)
+    setMessage("")
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${apiEndPoints}`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(formValues)
+      });
+      const data = await response.json()
+
+      if(!response.ok){
+        setMessage(data.message || "Something went wrong")
+      }else{
+        setMessage("Success")
+      }
+    } catch (error:any) {
+      setMessage(error.message || "Server Error")
+    }finally{
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-md">
         <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">{title}</h2>
 
-        <form className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {fields.map((field) => (
             <div key={field.name}>
               <label className="block text-gray-700 text-sm font-medium mb-1">
@@ -49,28 +87,36 @@ const AuthForm: React.FC<AuthFormProps> = ({
                 type={field.type}
                 name={field.name}
                 placeholder={field.placeholder}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={formValues[field.name] || ""}
+                onChange={handleChange}
+                className={`w-full px-4 py-2 border ${
+                  errors[field.name] ? "border-red-500" : "border-gray-300"
+                } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
+              {errors[field.name] && (
+                <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>
+              )}
             </div>
           ))}
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all disabled:bg-blue-300"
           >
-            {buttonText}
+            {loading ? "Please wait..." : buttonText}
           </button>
         </form>
 
+        {message && (
+          <p className="text-center text-sm mt-3 text-gray-700">{message}</p>
+        )}
+
         <p className="text-center text-sm text-gray-600 mt-4">
           {footerText}{" "}
-          <button
-            type="button"
-            onClick={() => router.push(footerLinkPath)}
-            className="text-blue-600 hover:underline"
-          >
+          <a href={footerLinkPath} className="text-blue-600 hover:underline">
             {footerLinkText}
-          </button>
+          </a>
         </p>
       </div>
     </div>

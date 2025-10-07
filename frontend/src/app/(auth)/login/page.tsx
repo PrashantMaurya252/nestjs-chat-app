@@ -28,6 +28,7 @@ export default function LoginPage() {
       footerText="Don't have an account?"
       footerLinkText="Sign up"
       footerLinkPath="/signup"
+      apiEndPoints="/auth/login"
     />
   );
 }

@@ -30,6 +30,7 @@ export default function SignupPage() {
       footerText="Already have an account?"
       footerLinkText="Log in"
       footerLinkPath="/login"
+      apiEndPoints="/auth/register"
     />
   );
 }
