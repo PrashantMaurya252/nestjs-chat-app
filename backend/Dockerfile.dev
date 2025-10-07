@@ -4,10 +4,12 @@ FROM node:20
 WORKDIR /app
 
 COPY package*.json ./
-
 RUN npm install
 
 COPY . .
+
+# ✅ Generate Prisma client inside container
+RUN npx prisma generate
 
 # Enable NestJS watch mode
 CMD ["npm", "run", "start:dev"]
