@@ -22,6 +22,7 @@ export default function LoginPage() {
 
   return (
     <AuthForm
+    type="login"
       title="Welcome Back"
       fields={fields}
       buttonText="Log In"

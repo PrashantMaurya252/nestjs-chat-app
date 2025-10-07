@@ -24,6 +24,7 @@ export default function SignupPage() {
 
   return (
     <AuthForm
+    type="signup"
       title="Create Account"
       fields={fields}
       buttonText="Sign Up"

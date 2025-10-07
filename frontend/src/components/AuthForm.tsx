@@ -10,6 +10,7 @@ interface Field {
 }
 
 interface AuthFormProps {
+  type:string,
   title: string;
   fields: Field[];
   buttonText: string;
@@ -20,6 +21,7 @@ interface AuthFormProps {
 }
 
 const AuthForm: React.FC<AuthFormProps> = ({
+  type,
   title,
   fields,
   buttonText,
@@ -56,14 +58,20 @@ const AuthForm: React.FC<AuthFormProps> = ({
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${apiEndPoints}`,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify(formValues)
+        body:JSON.stringify(formValues),
+        credentials:"include"
       });
       const data = await response.json()
 
       if(!response.ok){
         setMessage(data.message || "Something went wrong")
       }else{
-        setMessage("Success")
+        if(type === "login"){
+          router.push("/messages")
+        }else{
+          router.push("/login")
+        }
+        
       }
     } catch (error:any) {
       setMessage(error.message || "Server Error")
