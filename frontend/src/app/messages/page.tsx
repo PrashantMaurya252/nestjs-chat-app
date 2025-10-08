@@ -1,8 +1,11 @@
+import ChatComponent from '@/components/ChatComponent'
 import React from 'react'
 
 const Messages = () => {
   return (
-    <div>Messages</div>
+    <div className='w-full min-h-screen'>
+      <ChatComponent/>
+    </div>
   )
 }
 
