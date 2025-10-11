@@ -29,6 +29,26 @@ export class ChatGateWay implements OnGatewayConnection,OnGatewayDisconnect{
 
     @SubscribeMessage('send-message')
     handleSendMessage(
-        @MessageBody() data:{conversationId:string;senderId:string;receiversId:string[];text:string},
-    ){}
+        @MessageBody() data:{conversationId:string;senderId:string;receiverIds:string[];text:string},
+    ){
+        const {conversationId,senderId,receiverIds,text} = data
+
+        receiverIds?.forEach((rid)=>{
+            const socketId=this.onlineUsers.get(rid)
+            if(socketId){
+                this.server.to(socketId).emit('receive-message',{conversationId,senderId,text})
+            }
+        })
+    }
+
+    @SubscribeMessage('typing')
+    handleTyping(@MessageBody() data:{conversationId:string,senderId:string,receiverIds:string[]},){
+        const {conversationId,senderId,receiverIds} = data;
+        receiverIds?.forEach((rid)=>{
+            const socketId = this.onlineUsers.get(rid)
+            if(socketId){
+                this.server.to(socketId).emit('typing',{conversationId,senderId})
+            }
+        })
+    }
 }
