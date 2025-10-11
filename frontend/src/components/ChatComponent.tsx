@@ -45,21 +45,55 @@ const ChatComponent = () => {
 
     console.log(selectedUser,messages)
   return (
-    <div className='w-full min-h-full flex '>
-        <div className='w-[30%] h-full  border-r-2 '>
-            <div className='w-full h-[60px] flex justify-around items-center'>
-                <span className='font-semibold text-lg cursor-pointer' onClick={()=>setTab("chats")}>Chats</span>
-                <span className='font-semibold text-lg cursor-pointer' onClick={()=>setTab("groups")}>Groups</span>
-                <span className='font-semibold text-lg cursor-pointer' onClick={()=>setTab("notifications")}>Notifications</span>
-            </div>
-            <div className='w-full h-full'>
-                <UserList users={usersList} setSelectedChat={setSelectedUser} selectedChat={selectedUser}/>
-            </div>
+    <div className="w-full h-screen flex">
+      {/* LEFT SIDEBAR */}
+      <div className="w-[30%] h-full border-r-2 flex flex-col">
+        <div className="w-full h-[60px] flex justify-around items-center border-b">
+          <span
+            className={`font-semibold text-lg cursor-pointer ${
+              tab === "chats" && "text-blue-600"
+            }`}
+            onClick={() => setTab("chats")}
+          >
+            Chats
+          </span>
+          <span
+            className={`font-semibold text-lg cursor-pointer ${
+              tab === "groups" && "text-blue-600"
+            }`}
+            onClick={() => setTab("groups")}
+          >
+            Groups
+          </span>
+          <span
+            className={`font-semibold text-lg cursor-pointer ${
+              tab === "notifications" && "text-blue-600"
+            }`}
+            onClick={() => setTab("notifications")}
+          >
+            Notifications
+          </span>
         </div>
-        <div className='w-[70%] h-full '>
-            {selectedUser && <Conversations selectedUser={selectedUser} messages={messages}/>}
-            
+
+        <div className="flex-1 overflow-y-auto">
+          <UserList
+            users={usersList}
+            setSelectedChat={setSelectedUser}
+            selectedChat={selectedUser}
+          />
         </div>
+      </div>
+
+      {/* RIGHT CONVERSATION */}
+      <div className="w-[70%] h-full flex flex-col">
+        {selectedUser ? (
+          <Conversations selectedUser={selectedUser} messages={messages} />
+        ) : (
+          <div className="flex items-center justify-center text-gray-500 w-full h-full">
+            Select a chat to start conversation
+          </div>
+        )}
+      </div>
     </div>
   )
 }
