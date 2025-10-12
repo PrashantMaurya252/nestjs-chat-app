@@ -55,4 +55,12 @@ export class UserService {
 
         return userWithoutPassword
     }
+
+    async getAllUsers(){
+        const users = await this.prisma.user.findMany({})
+
+        
+
+        return users 
+    }
 }

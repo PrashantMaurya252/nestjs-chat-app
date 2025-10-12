@@ -1,77 +1,88 @@
-"use client" 
- 
- import React, { useEffect, useState } from 'react'
-import { users } from '@/data/dummyData'
-import UserList from './UserList'
-import Conversations from './Conversations'
-import { useAuthStore } from '@/app/store/useAuthStore'
-import { socket } from '@/utils/socketConnection'
+"use client";
 
-export interface Message{
-    id: string,
-    senderId: string,
-    receiverId: string,
-    text: string,
-    timestamp: string,
+import React, { useEffect, useState } from "react";
+import { users } from "@/data/dummyData";
+import UserList from "./UserList";
+import Conversations from "./Conversations";
+import { useAuthStore } from "@/app/store/useAuthStore";
+import { socket } from "@/utils/socketConnection";
+import axios from "axios";
+
+export interface Message {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  text: string;
+  timestamp: string;
 }
 
-export interface User{
-    id: string,
-    username: string,
-    profilePic: string,
-    lastMessage: string,
-    lastSeen: string,
-    messages:Message[]
+export interface User {
+  id: string;
+  username: string;
+  profilePic: string;
+  lastMessage: string;
+  lastSeen: string;
+  messages: Message[];
 }
-
 
 const ChatComponent = () => {
+  const [usersList, setUsersList] = useState<User[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [tab, setTab] = useState("chats");
+  const [selectedUser, setSelectedUser] = useState<User | null>();
+  const [typingUser, setTypingUser] = useState<string | null>(null);
+  const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
-    const [usersList,setUsersList] = useState<User[]>([])
-    const [messages,setMessages] = useState<Message[]>([])
-    const [tab,setTab] = useState("chats")
-    const [selectedUser,setSelectedUser] = useState<User | null>()
-    const [typingUser,setTypingUser] = useState<string|null>(null)
-    const [onlineUsers,setOnlineUsers] = useState<string[]>([])
+  const { user } = useAuthStore();
 
-    const {user} = useAuthStore()
+  useEffect(() => {
+    socket.emit("join", user?.userId);
+    socket.on("online-users", setOnlineUsers);
+    socket.on("receive-message", (msg) => {
+      if (msg.conversationId === selectedUser?.id) {
+        setMessages((prev) => [...prev, msg]);
+      }
+    });
 
+    socket.on("user-typing", ({ senderId }) => {
+      setTypingUser(senderId);
+      setTimeout(() => setTypingUser(null), 2000);
+    });
 
-    useEffect(()=>{
-      socket.emit("join",user?.userId)
-      socket.on("online-users",setOnlineUsers)
-      socket.on("receive-message",(msg)=>{
-        if(msg.conversationId === selectedUser?.id){
-          setMessages((prev)=>([...prev,msg]))
+    socket.on("messages-read", ({ coversationId, readerId }) => {
+      console.log(`conversation ${coversationId} read by ${readerId}`);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [user, selectedUser]);
+
+  useEffect(() => {
+    if (tab === "chats" || tab === "groups") {
+      const fetchUsers = async () => {
+        try {
+          const res = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL}/user/all-users`
+          );
+          console.log(res.data);
+          setUsersList(res.data);
+        } catch (err) {
+          console.error("Failed to fetch users:", err);
         }
-      })
+      };
 
-      socket.on("user-typing",({senderId})=>{
-        setTypingUser(senderId)
-        setTimeout(()=>setTypingUser(null),2000)
-      });
+      fetchUsers();
+    }
+  }, [tab]);
 
-      socket.on("messages-read",({coversationId,readerId})=>{
-        console.log(`conversation ${coversationId} read by ${readerId}`)
-      })
+  useEffect(() => {
+    if (selectedUser) {
+      setMessages(selectedUser.messages);
+    }
+  }, [selectedUser]);
 
-      return (()=>{
-        socket.disconnect()
-      })
-    },[user,selectedUser])
-    useEffect(()=>{
-        if(tab === "chats" || tab === "groups"){
-            setUsersList(users)
-        }
-    },[tab])
-
-    useEffect(()=>{
-        if(selectedUser){
-            setMessages(selectedUser.messages)
-        }
-    },[selectedUser])
-
-    console.log(selectedUser,messages)
+  console.log(selectedUser, messages);
   return (
     <div className="w-full h-screen flex">
       {/* LEFT SIDEBAR */}
@@ -123,7 +134,7 @@ const ChatComponent = () => {
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ChatComponent
+export default ChatComponent;
