@@ -2,9 +2,9 @@ import {create} from'zustand'
 import { persist } from 'zustand/middleware'
 
 interface AuthState{
-    user :{username:string,email:string} | null,
+    user :{username:string,email:string,userId:string,profilePic:string} | null,
     token :string | null
-    setUser:(user:{username:string,email:string},token:string)=>void
+    setUser:(user:{username:string,email:string,userId:string,profilePic:string},token:string)=>void
     logout:()=>void
 }
 

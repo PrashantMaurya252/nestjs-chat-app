@@ -4,6 +4,8 @@
 import { users } from '@/data/dummyData'
 import UserList from './UserList'
 import Conversations from './Conversations'
+import { useAuthStore } from '@/app/store/useAuthStore'
+import { socket } from '@/utils/socketConnection'
 
 export interface Message{
     id: string,
@@ -29,8 +31,34 @@ const ChatComponent = () => {
     const [messages,setMessages] = useState<Message[]>([])
     const [tab,setTab] = useState("chats")
     const [selectedUser,setSelectedUser] = useState<User | null>()
+    const [typingUser,setTypingUser] = useState<string|null>(null)
+    const [onlineUsers,setOnlineUsers] = useState<string[]>([])
+
+    const {user} = useAuthStore()
 
 
+    useEffect(()=>{
+      socket.emit("join",user?.userId)
+      socket.on("online-users",setOnlineUsers)
+      socket.on("receive-message",(msg)=>{
+        if(msg.conversationId === selectedUser?.id){
+          setMessages((prev)=>([...prev,msg]))
+        }
+      })
+
+      socket.on("user-typing",({senderId})=>{
+        setTypingUser(senderId)
+        setTimeout(()=>setTypingUser(null),2000)
+      });
+
+      socket.on("messages-read",({coversationId,readerId})=>{
+        console.log(`conversation ${coversationId} read by ${readerId}`)
+      })
+
+      return (()=>{
+        socket.disconnect()
+      })
+    },[user,selectedUser])
     useEffect(()=>{
         if(tab === "chats" || tab === "groups"){
             setUsersList(users)

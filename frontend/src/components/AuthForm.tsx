@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/app/store/useAuthStore";
 
 interface Field {
   label: string;
@@ -10,14 +11,14 @@ interface Field {
 }
 
 interface AuthFormProps {
-  type:string,
+  type: string;
   title: string;
   fields: Field[];
   buttonText: string;
   footerText: string;
   footerLinkText: string;
   footerLinkPath: string;
-  apiEndPoints:string;
+  apiEndPoints: string;
 }
 
 const AuthForm: React.FC<AuthFormProps> = ({
@@ -28,62 +29,76 @@ const AuthForm: React.FC<AuthFormProps> = ({
   footerText,
   footerLinkText,
   footerLinkPath,
-  apiEndPoints
+  apiEndPoints,
 }) => {
   const router = useRouter();
-  const [formValues,setFormValues] = useState<Record<string,string>>({})
-  const [loading,setLoading] = useState<boolean>(false)
-  const [errors,setErrors] = useState<Record<string,string>>({})
-  const [message,setMessage] = useState<string>("")
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [message, setMessage] = useState<string>("");
 
-  const handleChange=(e:React.ChangeEvent<HTMLInputElement>)=>{
-    const {name,value} = e.target
-    setFormValues((prev)=>({...prev,[name]:value}))
-    setErrors((prev)=>({...prev,[name]:""}))
-  }
+  const { setUser } = useAuthStore();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormValues((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
 
-  const handleSubmit =async(e:React.FormEvent)=>{
-    e.preventDefault()
-    const newErrors: Record<string,string>={}
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors: Record<string, string> = {};
 
-    fields.forEach((f)=>{
-      if(!formValues[f.name])  newErrors[f.name]=`field ${f.label} is required`
-    })
-    setErrors(newErrors)
-    if(Object.keys(newErrors).length>0) return
-    setLoading(true)
-    setMessage("")
+    fields.forEach((f) => {
+      if (!formValues[f.name])
+        newErrors[f.name] = `field ${f.label} is required`;
+    });
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
+    setLoading(true);
+    setMessage("");
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${apiEndPoints}`,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify(formValues),
-        credentials:"include"
-      });
-      const data = await response.json()
-
-      if(!response.ok){
-        setMessage(data.message || "Something went wrong")
-      }else{
-        if(type === "login"){
-          router.push("/messages")
-        }else{
-          router.push("/login")
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}${apiEndPoints}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formValues),
+          credentials: "include",
         }
-        
+      );
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.message || "Something went wrong");
+      } else {
+        if (type === "login") {
+          setUser(
+            { 
+              username:data.user.username,
+              email: data.user.email,
+              userId:data.user.id,
+              profilePic:data.user.id
+             },data.token
+          );
+          router.push("/messages");
+        } else {
+          router.push("/login");
+        }
       }
-    } catch (error:any) {
-      setMessage(error.message || "Server Error")
-    }finally{
-      setLoading(false)
+    } catch (error: any) {
+      setMessage(error.message || "Server Error");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
       <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-md">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">{title}</h2>
+        <h2 className="text-2xl font-semibold text-center mb-6 text-gray-800">
+          {title}
+        </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {fields.map((field) => (
@@ -102,7 +117,9 @@ const AuthForm: React.FC<AuthFormProps> = ({
                 } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
               />
               {errors[field.name] && (
-                <p className="text-red-500 text-xs mt-1">{errors[field.name]}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  {errors[field.name]}
+                </p>
               )}
             </div>
           ))}

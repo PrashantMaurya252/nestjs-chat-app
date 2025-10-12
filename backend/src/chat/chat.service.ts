@@ -57,4 +57,11 @@ export class ChatService {
             data:{isOnline,lastSeen:new Date()}
         })
     }
+
+    async markMessageAsRead(conversationId:string,userId:string){
+        await this.prisma.message.updateMany({
+            where:{conversationId,NOT:{readBy:{has:userId}}},
+            data:{readBy:{push:userId}}
+        })
+    }
 }

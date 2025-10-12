@@ -1,5 +1,6 @@
 import {WebSocketGateway,WebSocketServer,SubscribeMessage,OnGatewayConnection,OnGatewayDisconnect,MessageBody,ConnectedSocket} from '@nestjs/websockets'
 import { Socket,Server } from 'socket.io'
+import { ChatService } from './chat.service';
 
 @WebSocketGateway({
     cors:{origin:process.env.FRONTEND_URL as string,credenials:true},
@@ -8,6 +9,8 @@ import { Socket,Server } from 'socket.io'
 export class ChatGateWay implements OnGatewayConnection,OnGatewayDisconnect{
     @WebSocketServer() server:Server;
     private onlineUsers = new Map<string,string>()
+
+    constructor(private readonly chatService:ChatService){}
 
      handleConnection(socket:Socket){
         console.log("Socket Id",socket.id)
@@ -22,21 +25,24 @@ export class ChatGateWay implements OnGatewayConnection,OnGatewayDisconnect{
     }
 
     @SubscribeMessage('join')
-    handleJoin(@MessageBody() userId:string,@ConnectedSocket() socket:Socket){
+    async handleJoin(@MessageBody() userId:string,@ConnectedSocket() socket:Socket){
         this.onlineUsers.set(userId,socket.id)
         this.server.emit('online-users',Array.from(this.onlineUsers.keys()))
+        await this.chatService.updateUserStatus(userId,true)
     }
 
     @SubscribeMessage('send-message')
-    handleSendMessage(
+    async handleSendMessage(
         @MessageBody() data:{conversationId:string;senderId:string;receiverIds:string[];text:string},
     ){
         const {conversationId,senderId,receiverIds,text} = data
 
+        const message = await this.chatService.saveMessage(conversationId,senderId,text)
+
         receiverIds?.forEach((rid)=>{
             const socketId=this.onlineUsers.get(rid)
             if(socketId){
-                this.server.to(socketId).emit('receive-message',{conversationId,senderId,text})
+                this.server.to(socketId).emit('receive-message',message)
             }
         })
     }
@@ -48,6 +54,23 @@ export class ChatGateWay implements OnGatewayConnection,OnGatewayDisconnect{
             const socketId = this.onlineUsers.get(rid)
             if(socketId){
                 this.server.to(socketId).emit('typing',{conversationId,senderId})
+            }
+        })
+    }
+
+    @SubscribeMessage('mark-read')
+    async handleMarkAsRead(@MessageBody() data:{conversationId:string,userId:string,receiverIds:string[]}){
+        await this.chatService.markMessageAsRead(data.conversationId,data.userId)
+
+
+        data.receiverIds.forEach((rid)=>{
+            const socketId = this.onlineUsers.get(rid)
+
+            if(socketId){
+                this.server.to(socketId).emit('messages-read',{
+                    conversationId:data.conversationId,
+                    readerId:data.userId
+                })
             }
         })
     }
