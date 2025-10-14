@@ -126,4 +126,21 @@ export class ChatService {
   return message;
 }
 
+async findConversationBetweenTwo(userId1:string,userId2:string){
+        return await this.prisma.conversation.findFirst({
+            where:{
+                isGroup:false,
+                participants:{
+                    every:{
+                        userId:{in:[userId1,userId2]}
+                    }
+                }
+            },
+            include:{
+                participants:{include:{user:true}},
+                messages:{orderBy:{createdAt:'asc'}}
+            }
+        })
+    }
+
 }

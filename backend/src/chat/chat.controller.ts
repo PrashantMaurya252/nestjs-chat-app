@@ -31,4 +31,9 @@ export class ChatController {
         await this.chatService.markMessageAsRead(body.conversationId,body.userId)
         return {success:true}
     }
+
+    @Get('/private-conversations/:userId1/:userId2')
+    async getAllMessages(@Param('userId1') userId1:string,@Param('userId2') userId2:string){
+        return this.chatService.findConversationBetweenTwo(userId1,userId2)
+    }
 }

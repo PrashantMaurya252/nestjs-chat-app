@@ -15,7 +15,7 @@ const Conversations = ({ selectedUser, messages,sendMessage }: ConversationsProp
     console.log("Typed Message ",message)
   }
 
-  console.log(message)
+  console.log("messages in conversations",messages,selectedUser)
   return (
     <div className="w-full h-full flex flex-col">
       {/* Header */}
