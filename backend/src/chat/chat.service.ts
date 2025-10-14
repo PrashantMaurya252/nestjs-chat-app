@@ -23,6 +23,9 @@ export class ChatService {
     }
 
     async saveMessage(conversationId:string,senderId:string,text:string){
+        if(!conversationId){
+
+        }
         const message= await this.prisma.message.create({
             data:{conversationId,senderId,text},
             include:{sender:true}
@@ -64,4 +67,63 @@ export class ChatService {
             data:{readBy:{push:userId}}
         })
     }
+
+    async sendMessage(
+  senderId: string,
+  receiverId: string,
+  text: string,
+  isGroup: boolean
+) {
+  // Step 1: Find an existing one-on-one conversation
+  console.log("senderId",senderId,"receiverId",receiverId,"text",text,"isGroup",isGroup)
+  let conversation = await this.prisma.conversation.findFirst({
+    where: {
+      isGroup: false,
+      participants: {
+        every: {
+          userId: {
+            in: [senderId, receiverId]
+          }
+        },
+        // Ensure exactly 2 participants
+        // Prisma doesn't support exact count in relation filter, so we'll check manually
+      }
+    },
+    include: {
+      participants: true,
+      messages: true
+    }
+  });
+
+  // Step 2: If conversation doesn't exist, create it
+  if (!conversation) {
+    conversation = await this.prisma.conversation.create({
+      data: {
+        isGroup: false,
+        participants: {
+          create: [
+            { userId: senderId },
+            { userId: receiverId }
+          ]
+        },
+      },
+      include: {
+        participants: true,
+        messages: true
+      }
+    });
+  }
+
+  // Step 3: Create the message
+  const message = await this.prisma.message.create({
+    data: {
+      conversationId: conversation.id,
+      senderId,
+      text,
+    }
+  });
+
+  return message;
+}
+
 }

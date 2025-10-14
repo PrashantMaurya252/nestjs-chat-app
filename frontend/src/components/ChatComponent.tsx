@@ -34,36 +34,48 @@ const ChatComponent = () => {
   const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
   const { user } = useAuthStore();
+  console.log("current user", user);
+
+  // useEffect(() => {
+  //   if (!user?.userId) return;
+
+  //   // Connect once
+  //   socket.connect();
+  //   socket.emit("join", user.userId);
+
+  //   // Event listeners
+  //   // socket.on("online-users", setOnlineUsers);
+  //   socket.on("receive-message", (msg) => {
+  //     setMessages((prev) => {
+  //       if (msg.conversationId === selectedUser?.id) {
+  //         return [...prev, msg];
+  //       }
+  //       return prev;
+  //     });
+  //   });
+
+  //   // socket.on("user-typing", ({ senderId }) => {
+  //   //   setTypingUser(senderId);
+  //   //   setTimeout(() => setTypingUser(null), 2000);
+  //   // });
+
+  //   // socket.on("messages-read", ({ conversationId, readerId }) => {
+  //   //   console.log(`Conversation ${conversationId} read by ${readerId}`);
+  //   // });
+
+  //   return () => {
+  //     socket.disconnect(); // Cleanup only when user changes or logs out
+  //   };
+  // }, [user?.userId]);
 
   useEffect(() => {
-    socket.emit("join", user?.userId);
-    socket.on("online-users", setOnlineUsers);
-    socket.on("receive-message", (msg) => {
-      if (msg.conversationId === selectedUser?.id) {
-        setMessages((prev) => [...prev, msg]);
-      }
-    });
 
-    socket.on("user-typing", ({ senderId }) => {
-      setTypingUser(senderId);
-      setTimeout(() => setTypingUser(null), 2000);
-    });
-
-    socket.on("messages-read", ({ coversationId, readerId }) => {
-      console.log(`conversation ${coversationId} read by ${readerId}`);
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [user, selectedUser]);
-
-  useEffect(() => {
     if (tab === "chats" || tab === "groups") {
-      const fetchUsers = async () => {
+       if (user?.userId){
+        const fetchUsers = async () => {
         try {
           const res = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/user/all-users`
+            `${process.env.NEXT_PUBLIC_API_URL}/user/all-users/${user?.userId}`
           );
           console.log(res.data);
           setUsersList(res.data);
@@ -73,6 +85,8 @@ const ChatComponent = () => {
       };
 
       fetchUsers();
+       }
+      
     }
   }, [tab]);
 
@@ -81,6 +95,24 @@ const ChatComponent = () => {
       setMessages(selectedUser.messages);
     }
   }, [selectedUser]);
+
+  const sendMessage = (text:string) => {
+  if (!selectedUser) return;
+  // const msg = {
+  //   conversationId: selectedUser.id,
+  //   senderId: user?.userId,
+  //   receiverIds: [selectedUser.id], // single user test
+  //   text: "Hello from frontend test!"
+  // };
+
+  const msg={
+    senderId:user?.userId,
+    receiverId:selectedUser.id,
+    text:text,
+    isGroup:false
+  }
+  socket.emit("send-message-testing", msg);
+};
 
   console.log(selectedUser, messages);
   return (
@@ -126,7 +158,7 @@ const ChatComponent = () => {
       {/* RIGHT CONVERSATION */}
       <div className="w-[70%] h-full flex flex-col">
         {selectedUser ? (
-          <Conversations selectedUser={selectedUser} messages={messages} />
+          <Conversations selectedUser={selectedUser} messages={messages} sendMessage={sendMessage}/>
         ) : (
           <div className="flex items-center justify-center text-gray-500 w-full h-full">
             Select a chat to start conversation

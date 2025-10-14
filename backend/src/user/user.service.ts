@@ -56,11 +56,24 @@ export class UserService {
         return userWithoutPassword
     }
 
-    async getAllUsers(){
-        const users = await this.prisma.user.findMany({})
+    async getAllUsers(userId:string){
+        const users = await this.prisma.user.findMany({
+            where:{
+                id:{
+                    not:userId
+                }
+            },
+            select:{
+                id:true,
+                username:true,
+                email:true,
+                isOnline:true,
+                profilePic:true
+            }
+        })
 
         
 
-        return users 
+        return users ?? []
     }
 }

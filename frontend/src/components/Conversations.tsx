@@ -4,9 +4,10 @@ import { Message, User } from "./ChatComponent";
 interface ConversationsProps {
   selectedUser: User | null | undefined;
   messages: Message[];
+  sendMessage:(text:string)=>void
 }
 
-const Conversations = ({ selectedUser, messages }: ConversationsProps): React.ReactElement => {
+const Conversations = ({ selectedUser, messages,sendMessage }: ConversationsProps): React.ReactElement => {
 
   const [message,setMessage] = useState("")
 
@@ -53,7 +54,9 @@ const Conversations = ({ selectedUser, messages }: ConversationsProps): React.Re
           onChange={(e)=>setMessage(e.target.value)}
           value={message}
         />
-        <button className="bg-blue-600 text-white font-semibold rounded-2xl px-4 py-2 cursor-pointer" onClick={handleSendMessage}>
+        <button className="bg-blue-600 text-white font-semibold rounded-2xl px-4 py-2 cursor-pointer" onClick={()=>{sendMessage(message)
+          setMessage('')
+        }}>
           Send
         </button>
       </div>
